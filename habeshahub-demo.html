@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ሀበሻ Hub // Demo</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root {
+    --bg-dark: #080204;
+    --card-bg: #140508;
+    --accent-red: #ef4444;
+    --accent-red-hover: #dc2626;
+    --accent-green: #10b981;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --border: #2e0d14;
+    --input-bg: #1f0a10;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+}
+
+header {
+    background: var(--card-bg);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo { font-size: 1.2rem; font-weight: 900; color: var(--accent-red); display: flex; align-items: center; gap: 8px; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.header-note { font-size: 0.7rem; color: var(--text-muted); border: 1px solid var(--border); padding: 4px 10px; border-radius: 12px; }
+.icon-btn { background: var(--input-bg); border: 1px solid var(--border); color: var(--text-main); width: 34px; height: 34px; border-radius: 50%; cursor: pointer; }
+
+nav {
+    display: flex;
+    gap: 10px;
+    padding: 15px 20px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border);
+}
+
+.nav-btn {
+    background: var(--input-bg);
+    color: var(--text-muted);
+    border: none;
+    padding: 10px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nav-btn.active { background: var(--accent-red); color: #fff; }
+
+.count-badge {
+    background: rgba(255,255,255,0.2);
+    font-size: 0.7rem;
+    padding: 1px 7px;
+    border-radius: 10px;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 14px;
+    padding: 18px;
+}
+
+.grid-container.grid-2col { grid-template-columns: repeat(2, 1fr); }
+
+/* Model cards */
+.card-model {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+}
+
+.card-model img {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 8px;
+}
+
+.card-model .name { font-size: 0.9rem; font-weight: 700; }
+.card-model .sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+.card-model .followers { font-size: 0.7rem; color: var(--accent-red); margin-top: 4px; font-weight: 700; }
+
+/* Group cards */
+.card-group {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.card-group img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.card-group .title { font-size: 0.85rem; font-weight: 700; }
+.card-group .sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+
+/* Videos / Lives — decorative only, not clickable */
+.card-static {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: default;
+    opacity: 0.85;
+}
+
+.card-static img { width: 100%; height: 100px; object-fit: cover; display: block; }
+.card-static .info { padding: 8px 10px; }
+.card-static .title { font-size: 0.8rem; font-weight: 700; }
+.card-static .sub { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+.card-static .badge { display:inline-block; font-size:0.6rem; background: var(--input-bg); color: var(--text-muted); padding: 2px 6px; border-radius: 6px; margin-top: 4px; }
+
+/* Bottom sheet (model / group detail) */
+.bottom-sheet {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    max-width: 480px;
+    margin: 0 auto;
+    background: #121212;
+    border-top: 1px solid var(--border);
+    border-top-left-radius: 22px;
+    border-top-right-radius: 22px;
+    padding: 20px;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.1,0.9,0.2,1);
+    z-index: 500;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.9);
+}
+
+.bottom-sheet.open { transform: translateY(0); }
+
+.sheet-handle { width: 40px; height: 4px; background: #333; border-radius: 2px; margin: 0 auto 16px; cursor: pointer; }
+
+.sheet-avatar { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; display: block; margin: 0 auto 12px; border: 2px solid var(--accent-red); }
+
+.sheet-name { text-align: center; font-size: 1.2rem; font-weight: 800; }
+.sheet-meta { text-align: center; color: var(--text-muted); font-size: 0.85rem; margin: 6px 0 14px; }
+
+.info-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+.info-row span:first-child { color: var(--text-muted); }
+.plan-row .plan-label { font-weight: 700; }
+.plan-row .plan-label.plan-green { color: var(--accent-green); }
+.plan-row .plan-label.plan-red { color: var(--accent-red); }
+.plan-row .plan-amount { font-weight: 700; }
+.plan-row .plan-amount.plan-green { color: var(--accent-green); }
+.plan-row .plan-amount.plan-red { color: var(--accent-red); }
+
+.follow-btn {
+    width: 100%;
+    background: var(--input-bg);
+    border: 1px solid var(--accent-red);
+    color: var(--accent-red);
+    padding: 11px;
+    border-radius: 25px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.follow-btn.following { background: var(--accent-red); color: #fff; }
+
+.sheet-bio { font-size: 0.85rem; color: var(--text-main); line-height: 1.5; margin: 14px 0; }
+
+.sheet-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #b50d12, #6b070a);
+    color: #fff;
+    border: none;
+    padding: 13px;
+    border-radius: 25px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* Chat overlay */
+.chat-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    max-width: 480px;
+    margin: 0 auto;
+    background: #0a0a0a;
+    z-index: 900;
+    display: none;
+    flex-direction: column;
+}
+
+.chat-overlay.open { display: flex; }
+
+.chat-overlay-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    background: #121212;
+}
+
+.chat-overlay-header img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; }
+.chat-overlay-header .back { font-size: 1.2rem; cursor: pointer; padding: 4px 8px; }
+.chat-overlay-header .name { font-weight: 700; font-size: 0.95rem; }
+.chat-overlay-header .status { font-size: 0.7rem; color: var(--accent-green); }
+
+.chat-overlay-messages {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.msg { max-width: 78%; padding: 10px 14px; border-radius: 14px; font-size: 0.85rem; line-height: 1.4; }
+.msg.received { align-self: flex-start; background: var(--card-bg); border: 1px solid var(--border); }
+.msg.sent { align-self: flex-end; background: var(--accent-red); color: #fff; }
+.msg.image-msg { padding: 6px; background: transparent; border: none; }
+.msg.image-msg img { width: 160px; border-radius: 10px; display: block; }
+.msg-empty { text-align: center; color: var(--text-muted); font-size: 0.8rem; margin-top: 40px; }
+
+.chat-overlay-input {
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    background: #121212;
+}
+
+.chat-overlay-input input {
+    flex: 1;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 12px 16px;
+    border-radius: 22px;
+    font-size: 0.85rem;
+    outline: none;
+}
+
+.chat-overlay-input button {
+    background: linear-gradient(135deg, #b50d12, #6b070a);
+    border: none;
+    color: #fff;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* Search page */
+.page-view { display: none; }
+.page-view.active { display: block; }
+.page-view.search-page { padding-bottom: 70px; }
+
+.search-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+}
+.search-header .back { font-size: 1.1rem; cursor: pointer; padding: 4px; }
+.search-bar {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 9px 16px;
+    color: var(--text-muted);
+}
+.search-bar input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-main);
+    font-size: 0.85rem;
+}
+
+.search-filters {
+    display: flex;
+    gap: 8px;
+    padding: 14px 16px;
+    flex-wrap: wrap;
+}
+.filter-select {
+    flex: 1;
+    min-width: 90px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 9px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+}
+
+.search-empty {
+    text-align: center;
+    color: var(--text-muted);
+    margin-top: 60px;
+    font-size: 0.85rem;
+}
+.search-empty i { font-size: 2rem; display: block; margin-bottom: 10px; opacity: 0.5; }
+
+/* Group message sender label + avatar */
+.msg-with-sender { display: flex; gap: 8px; align-items: flex-end; align-self: flex-start; max-width: 80%; }
+.msg-with-sender img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.msg-with-sender .msg-body { display: flex; flex-direction: column; }
+.msg-with-sender .sender-name { font-size: 0.72rem; font-weight: 700; color: var(--accent-red); margin-bottom: 3px; }
+
+/* Bottom nav */
+.bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    max-width: 480px;
+    margin: 0 auto;
+    background: #121212;
+    border-top: 1px solid var(--border);
+    display: flex;
+    z-index: 400;
+}
+.bnav-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    padding: 10px 0 8px;
+    font-size: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+}
+.bnav-btn span { font-size: 0.65rem; font-weight: 600; }
+.bnav-btn.active { color: var(--accent-red); }
+
+body { padding-bottom: 62px; }
+
+</style>
+</head>
+<body>
+
+<header>
+    <div class="logo"><i class="fa-solid fa-fire"></i> ሀበሻ Hub</div>
+    <div class="header-right">
+        <div class="header-note">Demo Mode</div>
+        <button class="icon-btn" onclick="openSearchPage()"><i class="fa-solid fa-magnifying-glass"></i></button>
+    </div>
+</header>
+
+<main id="pageHome" class="page-view active">
+    <nav>
+        <button class="nav-btn active" onclick="switchCategory('models', this)">
+            <i class="fa-solid fa-user-group"></i> Models <span class="count-badge">10</span>
+        </button>
+        <button class="nav-btn" onclick="switchCategory('groups', this)">
+            <i class="fa-solid fa-users"></i> Groups <span class="count-badge">10</span>
+        </button>
+        <button class="nav-btn" onclick="switchCategory('videos', this)">
+            <i class="fa-solid fa-play"></i> Videos
+        </button>
+        <button class="nav-btn" onclick="switchCategory('streams', this)">
+            <i class="fa-solid fa-headset"></i> Lives
+        </button>
+    </nav>
+
+    <div class="grid-container" id="contentGrid"></div>
+</main>
+
+<!-- Search page (decorative — filters don't fetch anything) -->
+<div id="pageSearch" class="page-view search-page">
+    <div class="search-header">
+        <i class="fa-solid fa-chevron-left back" onclick="closeSearchPage()"></i>
+        <div class="search-bar">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" placeholder="Search models, groups...">
+        </div>
+    </div>
+    <div class="search-filters">
+        <select class="filter-select">
+            <option value="">Age</option>
+            <option>18-22</option>
+            <option>23-26</option>
+            <option>27-30</option>
+            <option>30+</option>
+        </select>
+        <select class="filter-select">
+            <option value="">City</option>
+            <option>Addis Ababa</option>
+            <option>Hawassa</option>
+            <option>Bahir Dar</option>
+            <option>Adama</option>
+            <option>Mekelle</option>
+            <option>Dire Dawa</option>
+            <option>Gondar</option>
+            <option>Jimma</option>
+            <option>Bishoftu</option>
+        </select>
+        <select class="filter-select">
+            <option value="">Payment</option>
+            <option>Free</option>
+            <option>Payer</option>
+            <option>Payee</option>
+        </select>
+    </div>
+    <div class="search-empty">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <p>Start typing to search</p>
+    </div>
+</div>
+
+<!-- Model / Group detail bottom sheet -->
+<div id="detailSheet" class="bottom-sheet"></div>
+
+<!-- Chat overlay -->
+<div id="chatOverlay" class="chat-overlay">
+    <div class="chat-overlay-header" id="chatOverlayHeader"></div>
+    <div class="chat-overlay-messages" id="chatOverlayMessages"></div>
+    <form class="chat-overlay-input" id="chatOverlayForm" onsubmit="sendChatMessage(event)">
+        <input type="text" id="chatOverlayInput" placeholder="Write a message..." autocomplete="off">
+        <button type="submit"><i class="fa-solid fa-paper-plane"></i></button>
+    </form>
+</div>
+
+<!-- Bottom nav — Chat & Profile are decorative only, do nothing -->
+<div class="bottom-nav">
+    <button class="bnav-btn active" onclick="goHome()"><i class="fa-solid fa-house"></i><span>Home</span></button>
+    <button class="bnav-btn"><i class="fa-solid fa-comment-dots"></i><span>Chat</span></button>
+    <button class="bnav-btn"><i class="fa-solid fa-user"></i><span>Profile</span></button>
+</div>
+
+<script>
+// ==========================================
+// DATA (all fictional — nature photos from Picsum used as placeholder avatars,
+// no real people, no payment, no verification)
+// ==========================================
+
+function img(seed, w = 300, h = 300) {
+    return `https://picsum.photos/seed/${seed}/${w}/${h}`;
+}
+
+const models = [
+    { id: 1, name: "Selam",   age: 23, city: "Addis Ababa", km: 2.4,  followers: "12.4K", plan: "Free",  amount: null, bio: "Coffee enthusiast and weekend hiker. Always up for a good chat.", img: img("mountain1") },
+    { id: 2, name: "Hana",    age: 26, city: "Hawassa",      km: 5.1,  followers: "8.1K",  plan: "Payee", amount: "200 birr", bio: "Lake mornings and long walks. Loves music and photography.", img: img("lake2") },
+    { id: 3, name: "Meron",   age: 21, city: "Bahir Dar",    km: 8.7,  followers: "21.9K", plan: "Free",  amount: null, bio: "Studying design, obsessed with sunsets and good playlists.", img: img("forest3") },
+    { id: 4, name: "Tigist",  age: 28, city: "Adama",        km: 1.2,  followers: "5.6K",  plan: "Payer", amount: "150 birr", bio: "Runs a small bakery. Dog mom. Big fan of road trips.", img: img("desert4") },
+    { id: 5, name: "Ruth",    age: 24, city: "Mekelle",      km: 12.3, followers: "17.2K", plan: "Free",  amount: null, bio: "Nurse by day, painter by night. Loves the highlands.", img: img("valley5") },
+    { id: 6, name: "Betty",   age: 29, city: "Dire Dawa",    km: 6.6,  followers: "3.8K",  plan: "Free",  amount: null, bio: "Into hiking, spicy food, and terrible puns.", img: img("canyon6") },
+    { id: 7, name: "Sara",    age: 22, city: "Gondar",       km: 3.9,  followers: "29.5K", plan: "Payee", amount: "300 birr", bio: "History nerd exploring castles on weekends.", img: img("meadow7") },
+    { id: 8, name: "Yordanos",age: 27, city: "Jimma",        km: 9.4,  followers: "6.3K",  plan: "Free",  amount: null, bio: "Coffee farm roots. Loves rainy season and reading.", img: img("glacier8") },
+    { id: 9, name: "Kalkidan",age: 25, city: "Bishoftu",     km: 4.0,  followers: "14.7K", plan: "Payer", amount: "120 birr", bio: "Lake town girl. Cycling, yoga, and good conversations.", img: img("dune9") },
+    { id: 10,name: "Nardos",  age: 20, city: "Addis Ababa",  km: 0.8,  followers: "2.1K",  plan: "Free",  amount: null, bio: "First-year student. Loves cats and city walks.", img: img("river10") }
+];
+
+// people who can appear as "senders" inside group chats
+const groupMembers = [
+    { name: "Abel",   img: img("member1") },
+    { name: "Marta",  img: img("member2") },
+    { name: "Dawit",  img: img("member3") },
+    { name: "Liya",   img: img("member4") },
+    { name: "Nathan", img: img("member5") }
+];
+
+const groupNames = [
+    "Coffee Lovers Addis", "Football Fans ET", "Travel Ethiopia", "Book Club Habesha",
+    "Music Makers", "Foodies Hub", "Tech Talk ET", "Art & Design",
+    "Fitness Squad", "Movie Buffs"
+];
+
+function buildGroupMessages(seedBase) {
+    const lines = [
+        "Good morning everyone! ☀️", "Anyone up for a meetup this weekend?",
+        "Just tried a new spot downtown, highly recommend!", "Haha that's hilarious 😂",
+        "Does anyone have recommendations for a good place nearby?", "Count me in!",
+        "What time works for everyone?", "This group is so wholesome, love it here.",
+        "Sharing a pic from earlier 👇", "That looks amazing!",
+        "Can someone send the address?", "I'll be a bit late, save me a seat 😅",
+        "Thanks for organizing this!", "Who else is coming on Saturday?",
+        "This made my day, thank you!", "Sending a photo from the trip 📸",
+        "Let's plan the next one already!", "Great turnout today everyone!",
+        "I'm free after 6pm if anyone wants to hang out.", "See you all soon!"
+    ];
+    const msgs = [];
+    for (let i = 0; i < 20; i++) {
+        const isSent = i % 3 === 2; // roughly 1 in 3 messages are "you"
+        const sender = groupMembers[i % groupMembers.length];
+        if (i === 6 || i === 13 || i === 17) {
+            msgs.push(isSent
+                ? { type: "sent", kind: "image", img: img(seedBase + "-photo" + i, 300, 200) }
+                : { type: "received", kind: "image", img: img(seedBase + "-photo" + i, 300, 200), sender });
+        } else {
+            msgs.push(isSent
+                ? { type: "sent", kind: "text", text: lines[i % lines.length] }
+                : { type: "received", kind: "text", text: lines[i % lines.length], sender });
+        }
+    }
+    return msgs;
+}
+
+const groups = groupNames.map((name, i) => ({
+    id: i + 1,
+    name: name,
+    members: `${(Math.random() * 5 + 0.5).toFixed(1)}k Members`,
+    img: img("group" + (i + 1)),
+    messages: i < 3 ? buildGroupMessages("g" + (i + 1)) : []
+}));
+
+const staticVideos = Array.from({ length: 10 }, (_, i) => ({
+    title: "Video", sub: `${Math.floor(Math.random() * 20 + 1)}K Views`, img: img("clip" + i)
+}));
+
+const staticStreams = Array.from({ length: 8 }, (_, i) => ({
+    title: "Live", sub: `${Math.floor(Math.random() * 90 + 5)} Watching`, img: img("stream" + i)
+}));
+
+const simulatedReplies = [
+    "Hey! How's your day going? 😊",
+    "That's really interesting, tell me more!",
+    "Haha, no way!",
+    "I was just thinking about that too.",
+    "Sounds like a plan!",
+    "Sorry, got a bit busy earlier. What's up?",
+    "That made me smile 🙂",
+    "Same here, honestly.",
+    "Let's talk more about this later?",
+    "Thanks for sharing that with me!"
+];
+let replyIndex = 0;
+const followedIds = new Set(); // simulated follow state, in-memory only
+
+// ==========================================
+// STATE
+// ==========================================
+let activeChatContext = null; // { type: 'model'|'group', data, log: [] }
+
+// ==========================================
+// GRID RENDERING
+// ==========================================
+function switchCategory(category, btn) {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderGrid(category);
+}
+
+function renderGrid(category) {
+    const grid = document.getElementById('contentGrid');
+    grid.innerHTML = '';
+    grid.classList.toggle('grid-2col', category === 'streams');
+
+    if (category === 'models') {
+        models.forEach(m => {
+            const card = document.createElement('div');
+            card.className = 'card-model';
+            card.onclick = () => openModelSheet(m);
+            card.innerHTML = `
+                <img src="${m.img}" alt="${m.name}">
+                <div class="name">${m.name}</div>
+                <div class="sub">${m.city}</div>
+                <div class="followers"><i class="fa-solid fa-user-group"></i> ${m.followers} followers</div>
+            `;
+            grid.appendChild(card);
+        });
+    } else if (category === 'groups') {
+        groups.forEach(g => {
+            const card = document.createElement('div');
+            card.className = 'card-group';
+            card.onclick = () => openGroupChat(g);
+            card.innerHTML = `
+                <img src="${g.img}" alt="${g.name}">
+                <div>
+                    <div class="title">${g.name}</div>
+                    <div class="sub">${g.members}</div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    } else if (category === 'videos') {
+        staticVideos.forEach(v => {
+            const card = document.createElement('div');
+            card.className = 'card-static';
+            card.innerHTML = `
+                <img src="${v.img}" alt="video">
+                <div class="info">
+                    <div class="title">${v.title}</div>
+                    <div class="sub">${v.sub}</div>
+                    <span class="badge">Preview only</span>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    } else if (category === 'streams') {
+        staticStreams.forEach(s => {
+            const card = document.createElement('div');
+            card.className = 'card-static';
+            card.innerHTML = `
+                <img src="${s.img}" alt="live">
+                <div class="info">
+                    <div class="title">${s.title}</div>
+                    <div class="sub">${s.sub}</div>
+                    <span class="badge">Preview only</span>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+}
+
+// ==========================================
+// MODEL PROFILE SHEET
+// ==========================================
+function openModelSheet(model) {
+    const sheet = document.getElementById('detailSheet');
+    const colorClass = model.plan === 'Payee' ? 'plan-red' : 'plan-green';
+    const amountText = model.plan === 'Free' ? '' : model.amount;
+    const isFollowing = followedIds.has(model.id);
+
+    sheet.innerHTML = `
+        <div class="sheet-handle" onclick="closeSheet()"></div>
+        <img src="${model.img}" class="sheet-avatar" alt="${model.name}">
+        <div class="sheet-name">${model.name}</div>
+        <div class="sheet-meta"><i class="fa-solid fa-location-dot"></i> ${model.city}</div>
+        <div class="info-row"><span>Age</span><span>${model.age}</span></div>
+        <div class="info-row plan-row">
+            <span class="plan-label ${colorClass}">${model.plan}</span>
+            <span class="plan-amount ${colorClass}">${amountText}</span>
+        </div>
+        <div class="info-row"><span>Distance from you</span><span>${model.km} km</span></div>
+        <div class="sheet-bio">${model.bio}</div>
+        <button class="follow-btn ${isFollowing ? 'following' : ''}" id="followBtn" onclick="toggleFollow(${model.id})">
+            <i class="fa-solid ${isFollowing ? 'fa-check' : 'fa-plus'}"></i> ${isFollowing ? 'Following' : 'Follow'}
+        </button>
+        <button class="sheet-btn" onclick="openModelChat(${model.id})"><i class="fa-solid fa-comments"></i> Chat</button>
+    `;
+    sheet.classList.add('open');
+}
+
+function toggleFollow(modelId) {
+    const btn = document.getElementById('followBtn');
+    if (followedIds.has(modelId)) {
+        followedIds.delete(modelId);
+        btn.classList.remove('following');
+        btn.innerHTML = `<i class="fa-solid fa-plus"></i> Follow`;
+    } else {
+        followedIds.add(modelId);
+        btn.classList.add('following');
+        btn.innerHTML = `<i class="fa-solid fa-check"></i> Following`;
+    }
+}
+
+function closeSheet() {
+    document.getElementById('detailSheet').classList.remove('open');
+}
+
+// ==========================================
+// CHAT OVERLAY (shared by model chat + group chat)
+// ==========================================
+function renderChatMessages() {
+    const container = document.getElementById('chatOverlayMessages');
+    container.innerHTML = '';
+    if (activeChatContext.log.length === 0) {
+        container.innerHTML = `<div class="msg-empty">No messages yet. Say hi!</div>`;
+        return;
+    }
+    activeChatContext.log.forEach(m => {
+        if (m.type === 'received' && m.sender) {
+            // group message from a specific member — avatar left, name on top
+            const wrap = document.createElement('div');
+            wrap.className = 'msg-with-sender';
+            const bodyHTML = m.kind === 'image'
+                ? `<img src="${m.img}" alt="shared photo" style="width:160px;border-radius:10px;">`
+                : `<div class="msg received" style="align-self:flex-start;">${m.text}</div>`;
+            wrap.innerHTML = `
+                <img src="${m.sender.img}" alt="${m.sender.name}">
+                <div class="msg-body">
+                    <div class="sender-name">${m.sender.name}</div>
+                    ${bodyHTML}
+                </div>
+            `;
+            container.appendChild(wrap);
+        } else {
+            const bubble = document.createElement('div');
+            if (m.kind === 'image') {
+                bubble.className = `msg image-msg ${m.type}`;
+                bubble.innerHTML = `<img src="${m.img}" alt="shared photo">`;
+            } else {
+                bubble.className = `msg ${m.type}`;
+                bubble.innerText = m.text;
+            }
+            container.appendChild(bubble);
+        }
+    });
+    container.scrollTop = container.scrollHeight;
+}
+
+function openChatOverlay(name, avatar) {
+    const header = document.getElementById('chatOverlayHeader');
+    header.innerHTML = `
+        <i class="fa-solid fa-chevron-left back" onclick="closeChatOverlay()"></i>
+        <img src="${avatar}" alt="${name}">
+        <div>
+            <div class="name">${name}</div>
+            <div class="status">Active now</div>
+        </div>
+    `;
+    renderChatMessages();
+    document.getElementById('chatOverlay').classList.add('open');
+}
+
+function closeChatOverlay() {
+    document.getElementById('chatOverlay').classList.remove('open');
+    activeChatContext = null;
+}
+
+function openModelChat(modelId) {
+    const model = models.find(m => m.id === modelId);
+    closeSheet();
+    activeChatContext = { type: 'model', data: model, log: [] };
+    openChatOverlay(model.name, model.img);
+}
+
+function openGroupChat(group) {
+    activeChatContext = { type: 'group', data: group, log: group.messages.slice() };
+    openChatOverlay(group.name, group.img);
+}
+
+function sendChatMessage(e) {
+    e.preventDefault();
+    const input = document.getElementById('chatOverlayInput');
+    const text = input.value.trim();
+    if (!text || !activeChatContext) return;
+
+    activeChatContext.log.push({ type: 'sent', kind: 'text', text });
+    input.value = '';
+    renderChatMessages();
+
+    setTimeout(() => {
+        const reply = simulatedReplies[replyIndex % simulatedReplies.length];
+        replyIndex++;
+        activeChatContext.log.push({ type: 'received', kind: 'text', text: reply });
+        renderChatMessages();
+    }, 700);
+}
+
+// ==========================================
+// SEARCH PAGE (decorative — never fetches or filters real results)
+// ==========================================
+function openSearchPage() {
+    document.getElementById('pageHome').classList.remove('active');
+    document.getElementById('pageSearch').classList.add('active');
+}
+
+function closeSearchPage() {
+    document.getElementById('pageSearch').classList.remove('active');
+    document.getElementById('pageHome').classList.add('active');
+}
+
+function goHome() {
+    closeSearchPage();
+    closeSheet();
+    closeChatOverlay();
+    document.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.bnav-btn').classList.add('active');
+}
+
+// ==========================================
+// INIT
+// ==========================================
+window.addEventListener('DOMContentLoaded', () => {
+    renderGrid('models');
+});
+
+</script>
+</body>
+</html>
